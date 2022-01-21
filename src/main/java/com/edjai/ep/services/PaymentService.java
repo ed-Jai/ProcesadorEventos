@@ -3,18 +3,17 @@
  */
 package com.edjai.ep.services;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
-import com.github.javafaker.Faker;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.edjai.ep.models.Payment;
-import com.edjai.ep.models.PaymentInfo;
+import com.edjai.ep.models.PaymentDTO;
 
 /**
  * @author edvino
@@ -23,20 +22,24 @@ import com.edjai.ep.models.PaymentInfo;
 @Service
 public class PaymentService {
 	@Autowired
-	private Faker faker;
-	
-	private List<Payment> payments = new ArrayList();
+	PaymentFactory paymentFactory;
+	private List<Payment> payments = null;
 	
 	@PostConstruct
 	public void init() {
-		int maxPayments =100;
-		String [] source =  {"online", "cash"} ;
-		for (int i = 0; i < maxPayments; i++) {
-			payments.add(new Payment("payment",source[0], faker.date().birthday(), new PaymentInfo(100, "TDD")));
-		}
+		this.payments = paymentFactory.loadPayments();
 	}
 	
 	public List<Payment> getPayments(){
 		return payments;
+	}
+	
+	public PaymentDTO createPayment(PaymentDTO payment) {
+		if(!payment.validPayment()) {
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Pago incorrecto");
+		}
+		Payment validPayment = new Payment(payment); 
+		payments.add(validPayment);
+		return payment;
 	}
 }
